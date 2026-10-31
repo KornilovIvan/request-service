@@ -39,12 +39,18 @@ func main() {
 			repository.NewCustomerRepository(db),
 		),
 	)
+	statuses := handler.NewStatusHandler(
+		service.NewStatusService(
+			repository.NewStatusRepository(db),
+		),
+	)
 
 	router := gin.Default()
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 	customers.Register(router)
+	statuses.Register(router)
 
 	if err := router.Run(addr); err != nil {
 		log.Fatal(err)
