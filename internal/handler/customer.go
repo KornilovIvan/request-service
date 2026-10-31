@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
-	"request-service/internal/service"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"request-service/internal/service"
 )
 
 type CustomerHandler struct {
@@ -28,6 +30,10 @@ func (h *CustomerHandler) Get(c *gin.Context) {
 	}
 
 	customer, err := h.service.Get(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
+		respondError(c, http.StatusNotFound, "customer not found")
+		return
+	}
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "internal error")
 		return

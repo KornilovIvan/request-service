@@ -20,7 +20,7 @@ func NewCustomerService(repo *repository.CustomerRepository) *CustomerService {
 func (s *CustomerService) Get(ctx context.Context, id int) (model.Customer, error) {
 	customer, err := s.repo.Get(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return model.Customer{}, nil
+		return model.Customer{}, ErrNotFound
 	}
 	return customer, err
 }
