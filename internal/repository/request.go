@@ -37,7 +37,7 @@ func (r *RequestRepository) Create(ctx context.Context, customerID int, title, s
 
 func (r *RequestRepository) List(ctx context.Context, status *string, createdFrom *time.Time, limit int) ([]model.Request, error) {
 	query := `
-	SELECT r.id, r.customer_id, r.title, r.status, r.created_at,
+	SELECT r.id, r.customer_id, r.title, r.status, r.created_at, r.closed_at,
 	       c.name AS customer_name
 	FROM requests r
 	JOIN customers c ON c.id = r.customer_id`
@@ -72,6 +72,7 @@ func (r *RequestRepository) List(ctx context.Context, status *string, createdFro
 			&request.Title,
 			&request.Status,
 			&request.CreatedAt,
+			&request.ClosedAt,
 			&request.CustomerName,
 		); err != nil {
 			return nil, err
@@ -83,7 +84,7 @@ func (r *RequestRepository) List(ctx context.Context, status *string, createdFro
 
 func (r *RequestRepository) Get(ctx context.Context, id int) (model.Request, error) {
 	const query = `
-	SELECT r.id, r.customer_id, r.title, r.status, r.created_at,
+	SELECT r.id, r.customer_id, r.title, r.status, r.created_at, r.closed_at,
 	       c.name AS customer_name
 	FROM requests r
 	JOIN customers c ON c.id = r.customer_id
@@ -96,6 +97,7 @@ func (r *RequestRepository) Get(ctx context.Context, id int) (model.Request, err
 		&request.Title,
 		&request.Status,
 		&request.CreatedAt,
+		&request.ClosedAt,
 		&request.CustomerName,
 	)
 	return request, err
@@ -104,9 +106,10 @@ func (r *RequestRepository) Get(ctx context.Context, id int) (model.Request, err
 func (r *RequestRepository) UpdateStatus(ctx context.Context, id int, status string) (model.Request, error) {
 	const query = `
 	UPDATE requests
-	SET status = $1
+	SET status = $1,
+	    closed_at = CASE WHEN $1 = 'closed' THEN now() ELSE NULL END
 	WHERE id = $2
-	RETURNING id, customer_id, title, status, created_at`
+	RETURNING id, customer_id, title, status, created_at, closed_at`
 
 	rows, err := r.db.QueryContext(ctx, query, status, id)
 	if err != nil {
@@ -128,6 +131,7 @@ func (r *RequestRepository) UpdateStatus(ctx context.Context, id int, status str
 		&request.Title,
 		&request.Status,
 		&request.CreatedAt,
+		&request.ClosedAt,
 	); err != nil {
 		return model.Request{}, err
 	}
