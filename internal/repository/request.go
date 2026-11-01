@@ -37,7 +37,9 @@ func (r *RequestRepository) Create(ctx context.Context, customerID int, title, s
 
 func (r *RequestRepository) List(ctx context.Context, status *string, createdFrom *time.Time, limit int) ([]model.Request, error) {
 	query := `
-	SELECT r.id, r.customer_id, r.title, r.status, r.created_at, r.closed_at,
+	SELECT r.id, r.customer_id,
+		   r.title,
+		   r.status, r.created_at, r.closed_at,
 	       c.name AS customer_name
 	FROM requests r
 	JOIN customers c ON c.id = r.customer_id`
