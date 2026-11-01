@@ -39,7 +39,11 @@ func (s *RequestService) Create(ctx context.Context, customerID int, title, stat
 		return model.Request{}, err
 	}
 
-	return s.repo.Create(ctx, customerID, title, status)
+	created, err := s.repo.Create(ctx, customerID, title, status)
+	if err != nil {
+		return model.Request{}, err
+	}
+	return s.Get(ctx, created.ID)
 }
 
 func (s *RequestService) UpdateStatus(ctx context.Context, id int, status string) (model.Request, error) {
@@ -50,11 +54,13 @@ func (s *RequestService) UpdateStatus(ctx context.Context, id int, status string
 		return model.Request{}, err
 	}
 
-	request, err := s.repo.UpdateStatus(ctx, id, status)
-	if errors.Is(err, sql.ErrNoRows) {
-		return model.Request{}, ErrNotFound
+	if _, err := s.repo.UpdateStatus(ctx, id, status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.Request{}, ErrNotFound
+		}
+		return model.Request{}, err
 	}
-	return request, err
+	return s.Get(ctx, id)
 }
 
 func (s *RequestService) List(ctx context.Context, status, createdFrom, limit *string, now time.Time) ([]model.Request, error) {

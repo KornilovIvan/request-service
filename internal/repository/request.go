@@ -37,23 +37,25 @@ func (r *RequestRepository) Create(ctx context.Context, customerID int, title, s
 
 func (r *RequestRepository) List(ctx context.Context, status *string, createdFrom *time.Time, limit int) ([]model.Request, error) {
 	query := `
-	SELECT id, customer_id, title, status, created_at
-	FROM requests`
+	SELECT r.id, r.customer_id, r.title, r.status, r.created_at,
+	       c.name AS customer_name
+	FROM requests r
+	JOIN customers c ON c.id = r.customer_id`
 	args := make([]any, 0, 3)
 	conditions := make([]string, 0, 2)
 	if status != nil {
 		args = append(args, *status)
-		conditions = append(conditions, "status = $"+strconv.Itoa(len(args)))
+		conditions = append(conditions, "r.status = $"+strconv.Itoa(len(args)))
 	}
 	if createdFrom != nil {
 		args = append(args, *createdFrom)
-		conditions = append(conditions, "created_at >= $"+strconv.Itoa(len(args)))
+		conditions = append(conditions, "r.created_at >= $"+strconv.Itoa(len(args)))
 	}
 	if len(conditions) > 0 {
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 	args = append(args, limit)
-	query += " ORDER BY created_at DESC LIMIT $" + strconv.Itoa(len(args))
+	query += " ORDER BY r.created_at DESC LIMIT $" + strconv.Itoa(len(args))
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -70,6 +72,7 @@ func (r *RequestRepository) List(ctx context.Context, status *string, createdFro
 			&request.Title,
 			&request.Status,
 			&request.CreatedAt,
+			&request.CustomerName,
 		); err != nil {
 			return nil, err
 		}
@@ -80,9 +83,11 @@ func (r *RequestRepository) List(ctx context.Context, status *string, createdFro
 
 func (r *RequestRepository) Get(ctx context.Context, id int) (model.Request, error) {
 	const query = `
-	SELECT id, customer_id, title, status, created_at
-	FROM requests
-	WHERE id = $1`
+	SELECT r.id, r.customer_id, r.title, r.status, r.created_at,
+	       c.name AS customer_name
+	FROM requests r
+	JOIN customers c ON c.id = r.customer_id
+	WHERE r.id = $1`
 
 	var request model.Request
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
@@ -91,6 +96,7 @@ func (r *RequestRepository) Get(ctx context.Context, id int) (model.Request, err
 		&request.Title,
 		&request.Status,
 		&request.CreatedAt,
+		&request.CustomerName,
 	)
 	return request, err
 }
