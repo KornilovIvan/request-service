@@ -19,6 +19,7 @@ func NewRequestHandler(service *service.RequestService) *RequestHandler {
 
 func (h *RequestHandler) Register(r gin.IRouter) {
 	r.POST("/api/v1/requests", h.Create)
+	r.GET("/api/v1/requests/:id", h.Get)
 }
 
 func (h *RequestHandler) Create(c *gin.Context) {
@@ -50,4 +51,22 @@ func (h *RequestHandler) Create(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, request)
+}
+
+func (h *RequestHandler) Get(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+
+	request, err := h.service.Get(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
+		respondError(c, http.StatusNotFound, "request not found")
+		return
+	}
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "internal error")
+		return
+	}
+	c.JSON(http.StatusOK, request)
 }

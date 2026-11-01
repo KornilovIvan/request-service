@@ -32,6 +32,23 @@ func (r *RequestRepository) Create(ctx context.Context, customerID int, title, s
 	return request, err
 }
 
+func (r *RequestRepository) Get(ctx context.Context, id int) (model.Request, error) {
+	const query = `
+	SELECT id, customer_id, title, status, created_at
+	FROM requests
+	WHERE id = $1`
+
+	var request model.Request
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&request.ID,
+		&request.CustomerID,
+		&request.Title,
+		&request.Status,
+		&request.CreatedAt,
+	)
+	return request, err
+}
+
 func (r *RequestRepository) StatusExists(ctx context.Context, code string) error {
 	const query = `
 	SELECT code

@@ -40,3 +40,11 @@ func (s *RequestService) Create(ctx context.Context, customerID int, title, stat
 
 	return s.repo.Create(ctx, customerID, title, status)
 }
+
+func (s *RequestService) Get(ctx context.Context, id int) (model.Request, error) {
+	request, err := s.repo.Get(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Request{}, ErrNotFound
+	}
+	return request, err
+}
