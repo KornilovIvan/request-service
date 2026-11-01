@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"request-service/internal/model"
 	"request-service/internal/service"
 )
 
@@ -19,6 +20,8 @@ func NewCustomerHandler(service *service.CustomerService) *CustomerHandler {
 }
 
 func (h *CustomerHandler) Register(r gin.IRouter) {
+	r.POST("/api/v1/customers", h.Create)
+	r.GET("/api/v1/customers", h.List)
 	r.GET("/api/v1/customers/:id", h.Get)
 }
 
@@ -39,4 +42,37 @@ func (h *CustomerHandler) Get(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, customer)
+}
+
+func (h *CustomerHandler) Create(c *gin.Context) {
+	var body struct {
+		Name string `json:"name"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		respondError(c, http.StatusBadRequest, "name is required")
+		return
+	}
+
+	customer, err := h.service.Create(c.Request.Context(), body.Name)
+	if errors.Is(err, service.ErrNameRequired) {
+		respondError(c, http.StatusBadRequest, "name is required")
+		return
+	}
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "internal error")
+		return
+	}
+	c.JSON(http.StatusCreated, customer)
+}
+
+func (h *CustomerHandler) List(c *gin.Context) {
+	customers, err := h.service.List(c.Request.Context())
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "internal error")
+		return
+	}
+	if customers == nil {
+		customers = []model.Customer{}
+	}
+	c.JSON(http.StatusOK, customers)
 }

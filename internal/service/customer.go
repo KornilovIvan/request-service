@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"request-service/internal/model"
 	"request-service/internal/repository"
@@ -23,4 +24,16 @@ func (s *CustomerService) Get(ctx context.Context, id int) (model.Customer, erro
 		return model.Customer{}, ErrNotFound
 	}
 	return customer, err
+}
+
+func (s *CustomerService) Create(ctx context.Context, name string) (model.Customer, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return model.Customer{}, ErrNameRequired
+	}
+	return s.repo.Create(ctx, name)
+}
+
+func (s *CustomerService) List(ctx context.Context) ([]model.Customer, error) {
+	return s.repo.List(ctx)
 }
