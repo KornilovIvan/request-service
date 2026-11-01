@@ -25,7 +25,7 @@ func NormalizeListFilter(status, createdFrom, limit *string, now time.Time) (Lis
 	}
 
 	if createdFrom != nil {
-		parsed, err := time.Parse("2006-07-06", *createdFrom)
+		parsed, err := time.Parse("2006-01-02", *createdFrom)
 		if err != nil {
 			return ListFilter{}, ErrInvalidDate
 		}
