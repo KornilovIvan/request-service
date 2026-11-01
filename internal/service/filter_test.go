@@ -31,11 +31,9 @@ func TestNormalizeListFilter(t *testing.T) {
 			wantLimit: 20,
 		},
 		{
-			name:          "empty status",
-			status:        str(""),
-			wantStatusSet: true,
-			wantStatus:    "",
-			wantLimit:     20,
+			name:      "empty status",
+			status:    str(""),
+			wantLimit: 20,
 		},
 		{
 			name:          "active",

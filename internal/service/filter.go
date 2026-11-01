@@ -14,9 +14,9 @@ type ListFilter struct {
 func NormalizeListFilter(status, createdFrom, limit *string, now time.Time) (ListFilter, error) {
 	filter := ListFilter{Limit: 20}
 
-	if status != nil {
+	if status != nil && *status != "" {
 		switch *status {
-		case "", "active", "pending", "closed":
+		case "active", "pending", "closed":
 			value := *status
 			filter.Status = &value
 		default:
