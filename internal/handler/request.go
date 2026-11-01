@@ -20,6 +20,7 @@ func NewRequestHandler(service *service.RequestService) *RequestHandler {
 func (h *RequestHandler) Register(r gin.IRouter) {
 	r.POST("/api/v1/requests", h.Create)
 	r.GET("/api/v1/requests/:id", h.Get)
+	r.PATCH("/api/v1/requests/:id/status", h.UpdateStatus)
 }
 
 func (h *RequestHandler) Create(c *gin.Context) {
@@ -60,6 +61,36 @@ func (h *RequestHandler) Get(c *gin.Context) {
 	}
 
 	request, err := h.service.Get(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
+		respondError(c, http.StatusNotFound, "request not found")
+		return
+	}
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "internal error")
+		return
+	}
+	c.JSON(http.StatusOK, request)
+}
+
+func (h *RequestHandler) UpdateStatus(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+
+	var body struct {
+		Status string `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		respondError(c, http.StatusBadRequest, "invalid status")
+		return
+	}
+
+	request, err := h.service.UpdateStatus(c.Request.Context(), id, body.Status)
+	if errors.Is(err, service.ErrInvalidStatus) {
+		respondError(c, http.StatusBadRequest, "invalid status")
+		return
+	}
 	if errors.Is(err, service.ErrNotFound) {
 		respondError(c, http.StatusNotFound, "request not found")
 		return

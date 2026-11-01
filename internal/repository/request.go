@@ -49,6 +49,39 @@ func (r *RequestRepository) Get(ctx context.Context, id int) (model.Request, err
 	return request, err
 }
 
+func (r *RequestRepository) UpdateStatus(ctx context.Context, id int, status string) (model.Request, error) {
+	const query = `
+	UPDATE requests
+	SET status = $1
+	WHERE id = $2
+	RETURNING id, customer_id, title, status, created_at`
+
+	rows, err := r.db.QueryContext(ctx, query, status, id)
+	if err != nil {
+		return model.Request{}, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return model.Request{}, err
+		}
+		return model.Request{}, sql.ErrNoRows
+	}
+
+	var request model.Request
+	if err := rows.Scan(
+		&request.ID,
+		&request.CustomerID,
+		&request.Title,
+		&request.Status,
+		&request.CreatedAt,
+	); err != nil {
+		return model.Request{}, err
+	}
+	return request, rows.Err()
+}
+
 func (r *RequestRepository) StatusExists(ctx context.Context, code string) error {
 	const query = `
 	SELECT code

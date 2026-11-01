@@ -41,6 +41,21 @@ func (s *RequestService) Create(ctx context.Context, customerID int, title, stat
 	return s.repo.Create(ctx, customerID, title, status)
 }
 
+func (s *RequestService) UpdateStatus(ctx context.Context, id int, status string) (model.Request, error) {
+	if err := s.repo.StatusExists(ctx, status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.Request{}, ErrInvalidStatus
+		}
+		return model.Request{}, err
+	}
+
+	request, err := s.repo.UpdateStatus(ctx, id, status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Request{}, ErrNotFound
+	}
+	return request, err
+}
+
 func (s *RequestService) Get(ctx context.Context, id int) (model.Request, error) {
 	request, err := s.repo.Get(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
