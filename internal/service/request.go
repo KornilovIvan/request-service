@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"time"
 
 	"request-service/internal/model"
 	"request-service/internal/repository"
@@ -54,6 +55,14 @@ func (s *RequestService) UpdateStatus(ctx context.Context, id int, status string
 		return model.Request{}, ErrNotFound
 	}
 	return request, err
+}
+
+func (s *RequestService) List(ctx context.Context, status, createdFrom, limit *string, now time.Time) ([]model.Request, error) {
+	filter, err := NormalizeListFilter(status, createdFrom, limit, now)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.List(ctx, filter.Status, filter.CreatedFrom, filter.Limit)
 }
 
 func (s *RequestService) Get(ctx context.Context, id int) (model.Request, error) {

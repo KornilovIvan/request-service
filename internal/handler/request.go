@@ -3,9 +3,12 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"request-service/internal/model"
 	"request-service/internal/service"
 )
 
@@ -19,6 +22,7 @@ func NewRequestHandler(service *service.RequestService) *RequestHandler {
 
 func (h *RequestHandler) Register(r gin.IRouter) {
 	r.POST("/api/v1/requests", h.Create)
+	r.GET("/api/v1/requests", h.List)
 	r.GET("/api/v1/requests/:id", h.Get)
 	r.PATCH("/api/v1/requests/:id/status", h.UpdateStatus)
 }
@@ -52,6 +56,45 @@ func (h *RequestHandler) Create(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, request)
+}
+
+func (h *RequestHandler) List(c *gin.Context) {
+	query := c.Request.URL.Query()
+	requests, err := h.service.List(
+		c.Request.Context(),
+		queryParam(query, "status"),
+		queryParam(query, "created_from"),
+		queryParam(query, "limit"),
+		time.Now(),
+	)
+	if errors.Is(err, service.ErrInvalidStatus) {
+		respondError(c, http.StatusBadRequest, "invalid status")
+		return
+	}
+	if errors.Is(err, service.ErrInvalidDate) {
+		respondError(c, http.StatusBadRequest, "invalid date")
+		return
+	}
+	if errors.Is(err, service.ErrInvalidLimit) {
+		respondError(c, http.StatusBadRequest, "invalid limit")
+		return
+	}
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "internal error")
+		return
+	}
+	if requests == nil {
+		requests = []model.Request{}
+	}
+	c.JSON(http.StatusOK, requests)
+}
+
+func queryParam(query url.Values, key string) *string {
+	if !query.Has(key) {
+		return nil
+	}
+	value := query.Get(key)
+	return &value
 }
 
 func (h *RequestHandler) Get(c *gin.Context) {
