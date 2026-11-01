@@ -49,6 +49,11 @@ func main() {
 			repository.NewDocumentRepository(db),
 		),
 	)
+	requests := handler.NewRequestHandler(
+		service.NewRequestService(
+			repository.NewRequestRepository(db),
+		),
+	)
 
 	router := gin.Default()
 	router.GET("/health", func(c *gin.Context) {
@@ -57,6 +62,7 @@ func main() {
 	customers.Register(router)
 	statuses.Register(router)
 	documents.Register(router)
+	requests.Register(router)
 
 	if err := router.Run(addr); err != nil {
 		log.Fatal(err)
