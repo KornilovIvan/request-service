@@ -3,15 +3,11 @@ package main
 import (
 	"database/sql"
 	"log"
-	"net/http"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"request-service/internal/handler"
-	"request-service/internal/repository"
-	"request-service/internal/service"
 )
 
 func main() {
@@ -34,37 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	customers := handler.NewCustomerHandler(
-		service.NewCustomerService(
-			repository.NewCustomerRepository(db),
-		),
-	)
-	statuses := handler.NewStatusHandler(
-		service.NewStatusService(
-			repository.NewStatusRepository(db),
-		),
-	)
-	documents := handler.NewDocumentHandler(
-		service.NewDocumentService(
-			repository.NewDocumentRepository(db),
-		),
-	)
-	requests := handler.NewRequestHandler(
-		service.NewRequestService(
-			repository.NewRequestRepository(db),
-		),
-	)
-
-	router := gin.Default()
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
-	customers.Register(router)
-	statuses.Register(router)
-	documents.Register(router)
-	requests.Register(router)
-
-	if err := router.Run(addr); err != nil {
+	if err := handler.NewRouter(db).Run(addr); err != nil {
 		log.Fatal(err)
 	}
 }
